@@ -1,0 +1,19 @@
+{
+  "name": "zebra_plugin_btprint",
+  "version": "1.0.0",
+  "description": "Print to Zebra over bluetooth from Android and iOS",
+  "cordova": {
+    "id": "zebra_plugin_btprint",
+    "platforms": [
+      "ios",
+      "android"
+    ]
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "cordova-ios",
+    "cordova-android"
+  ],
+  "author": "S5 Consulting",
+  "license": "MIT"
+}

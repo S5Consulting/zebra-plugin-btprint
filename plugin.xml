@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="zebra_plugin_btprint" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>ZebraPluginBtPrint</name>
+    <js-module name="ZebraPluginBtPrint" src="www/ZebraPluginBtPrint.js">
+        <clobbers target="cordova.plugins.ZebraPluginBtPrint" />
+    </js-module>
+    <platform name="ios">
+        <config-file parent="/*" target="config.xml">
+            <feature name="ZebraPluginBtPrint">
+                <param name="ios-package" value="ZebraPluginBtPrint" />
+            </feature>
+        </config-file>
+        <source-file src="src/ios/ZebraPluginBtPrint.m" />
+    </platform>
+    <platform name="android">
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="ZebraPluginBtPrint">
+                <param name="android-package" value="zebra_plugin_btprint.ZebraPluginBtPrint" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="AndroidManifest.xml"></config-file>
+        <config-file parent="/*" target="AndroidManifest.xml">
+            <uses-permission android:name="android.permission.BLUETOOTH" />
+        </config-file>
+
+        <config-file parent="/*" target="AndroidManifest.xml">
+            <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+        </config-file>
+        <source-file src="src/android/ZebraPluginBtPrint.java" target-dir="src/zebra_plugin_btprint/ZebraPluginBtPrint" />
+    </platform>
+</plugin>
