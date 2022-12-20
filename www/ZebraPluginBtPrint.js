@@ -1,5 +1,17 @@
-var exec = require('cordova/exec');
+let exec = require('cordova/exec');
 
-exports.coolMethod = function (arg0, success, error) {
-    exec(success, error, 'ZebraPluginBtPrint', 'coolMethod', [arg0]);
+let App = function() {
+    this.initialize = function (delay) {
+        exec(null, null, 'ZebraPluginBtPrint', 'initialize', [delay || 0]);
+    };
+
+    this.print = function (mac, data, statusCallback) {
+        exec(statusCallback, statusCallback, 'ZebraPluginBtPrint', 'print', [mac, data]);
+    };
 };
+
+module.exports = App;
+
+
+
+
