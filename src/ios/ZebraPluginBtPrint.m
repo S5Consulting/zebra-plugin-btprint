@@ -3,7 +3,6 @@
 #import <Cordova/CDV.h>
 #import <CoreBluetooth/CoreBluetooth.h>
 #import <ExternalAccessory/ExternalAccessory.h>
-#import "MfiBtPrinterConnection.h"
 
 
 @interface ZebraPluginBtPrint : CDVPlugin {
