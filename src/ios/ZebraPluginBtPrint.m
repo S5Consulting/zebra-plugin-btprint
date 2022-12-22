@@ -5,19 +5,27 @@
 #import <ExternalAccessory/ExternalAccessory.h>
 
 
-@interface ZebraPluginBtPrint : CDVPlugin {
-  // Member variables go here.
-}
+@interface ZebraPluginBtPrint: NSObject  {
+   NSString* mac;
+   NSString* data;
+   //EAAccessoryManager *sam
+   }
+   
+    @property (nonatomic, retain) NSString* mac;
+    @property (nonatomic, retain) NSString* data;
 
-@implementation ZebraPluginBtPrint
 
-- (void) initialize{}
+
 @end
+
+@implementation ZebraPluginBtPrint 
+
+
 
 /**
  * Sends the printing content to the printer controller and opens them.
  */
-- (void) print:(NSString*)mac :(NSString*)data  {
+- (void) print:(NSString*)mac data:(NSString*)data  {
 //Find the Zebra Bluetooth Accessory
 EAAccessoryManager *sam = [EAAccessoryManager sharedAccessoryManager];
 NSArray * connectedAccessories = [sam connectedAccessories];
@@ -44,5 +52,7 @@ UIAlertView *errorAlert = [[UIAlertView alloc] initWithTitle:@"Error" message:[e
 [thePrinterConn close];
 [thePrinterConn release];
 }
+
+@end
 
 @end
