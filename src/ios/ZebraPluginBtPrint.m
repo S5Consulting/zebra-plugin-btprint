@@ -4,27 +4,28 @@
 #import <ExternalAccessory/ExternalAccessory.h>
 #import "MfiBtPrinterConnection.h"
 
-@interface ZebraPluginBtPrint : NSObject
-{
-    NSString *data;
-    NSString *serialNumber;
-}
+@interface ZebraPluginBtPrint : NSObject 
 
-@property (nonatomic, retain) NSString* data;
+    - (void) print:(NSString *)data;
+
 @end
 
-@implementation ZebraPluginBtPrint
+@implementation ZebraPluginBtPrint {
+    ZebraPrinterConnection *thePrinterConn;
+    EAAccessoryManager *sam;
+    NSARRAY *connectedAccessories;
+}
 
 
 //Sends the printing content to the printer controller and opens them.
-- (void)print:(NSString*)data
+- (void)print:(NSString *)data
 {
 
     NSString *serialNumber = @"";
 
 //Find the Zebra Bluetooth Accessory
     EAAccessoryManager *sam = [EAAccessoryManager sharedAccessoryManager];
-    NSArray * connectedAccessories = [sam connectedAccessories];
+    NSArray *connectedAccessories = [sam connectedAccessories];
     for (EAAccessory *accessory in connectedAccessories) {
         if([accessory.protocolStrings indexOfObject:@"com.zebra.rawport"] != NSNotFound) {
             serialNumber = accessory.serialNumber;
