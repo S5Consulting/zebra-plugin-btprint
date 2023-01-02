@@ -1,58 +1,52 @@
 /********* ZebraPluginBtPrint.m Cordova Plugin Implementation *******/
 
-#import <Cordova/CDV.h>
-#import <CoreBluetooth/CoreBluetooth.h>
+#import <Foundation/Foundation.h>
 #import <ExternalAccessory/ExternalAccessory.h>
+#import "MfiBtPrinterConnection.h"
 
+@interface ZebraPluginBtPrint : NSObject
+{
+    NSString *data;
+    NSString *serialNumber;
+}
 
-@interface ZebraPluginBtPrint: NSObject  {
-   NSString* mac;
-   NSString* data;
-   //EAAccessoryManager *sam
-   }
-   
-    @property (nonatomic, retain) NSString* mac;
-    @property (nonatomic, retain) NSString* data;
-
-
-
+@property (nonatomic, retain) NSString* data;
 @end
 
-@implementation ZebraPluginBtPrint 
+@implementation ZebraPluginBtPrint
 
 
+//Sends the printing content to the printer controller and opens them.
+- (void)print:(NSString*)data
+{
 
-/**
- * Sends the printing content to the printer controller and opens them.
- */
-- (void) print:(NSString*)mac data:(NSString*)data  {
+    NSString *serialNumber = @"";
+
 //Find the Zebra Bluetooth Accessory
-EAAccessoryManager *sam = [EAAccessoryManager sharedAccessoryManager];
-NSArray * connectedAccessories = [sam connectedAccessories];
-for (EAAccessory *accessory in connectedAccessories) {
-if([accessory.protocolStrings indexOfObject:@"com.zebra.rawport"] != NSNotFound){
-mac = accessory.serialNumber;
-break;
+    EAAccessoryManager *sam = [EAAccessoryManager sharedAccessoryManager];
+    NSArray * connectedAccessories = [sam connectedAccessories];
+    for (EAAccessory *accessory in connectedAccessories) {
+        if([accessory.protocolStrings indexOfObject:@"com.zebra.rawport"] != NSNotFound) {
+            serialNumber = accessory.serialNumber;
+            break;
 //Note: This will find the first printer connected! If you have multiple Zebra printers connected, you should display a list to the user and have him select the one they wish to use
-}
-}
+        }
+    }
 // Instantiate connection to Zebra Bluetooth accessory
-id<ZebraPrinterConnection, NSObject> thePrinterConn = [[MfiBtPrinterConnection alloc] initWithSerialNumber:serialNumber];
+    id<ZebraPrinterConnection, NSObject> thePrinterConn = [[MfiBtPrinterConnection alloc] initWithSerialNumber:serialNumber];
 // Open the connection - physical connection is established here.
-BOOL success = [thePrinterConn open];
-NSError *error = nil;
+    BOOL success = [thePrinterConn open];
+    NSError *error = nil;
 // Send the data to printer as a byte array.
-success = success && [thePrinterConn write:[data dataUsingEncoding:NSUTF8StringEncoding] error:&error];
-if (success != YES || error != nil) {
-UIAlertView *errorAlert = [[UIAlertView alloc] initWithTitle:@"Error" message:[error localizedDescription] delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles:nil];
-[errorAlert show];
-[errorAlert release];
-}
+    success = success && [thePrinterConn write:[data dataUsingEncoding:NSUTF8StringEncoding] error:&error];
+    if (success != YES || error != nil) {
+        UIAlertView *errorAlert = [[UIAlertView alloc] initWithTitle:@"Error" message:[error localizedDescription] delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles:nil];
+        [errorAlert show];
+        [errorAlert release];
+    }
 // Close the connection to release resources.
-[thePrinterConn close];
-[thePrinterConn release];
+    [thePrinterConn close];
+    [thePrinterConn release];
 }
-
-@end
 
 @end
