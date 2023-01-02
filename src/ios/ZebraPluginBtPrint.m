@@ -13,7 +13,6 @@
 @implementation ZebraPluginBtPrint {
     ZebraPrinterConnection *thePrinterConn;
     EAAccessoryManager *sam;
-    NSARRAY *connectedAccessories;
 }
 
 
