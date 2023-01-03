@@ -16,26 +16,26 @@
             </array>
         </config-file>
         <!--Zebra SDK headers-->
-        <header-file src="src/ios/ZebraPrinter/lib/include/DiscoveredPrinter.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/DiscoveredPrinterNetwork.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/FieldDescriptionData.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/FileUtil.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/FormatUtil.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/GraphicsUtil.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/MagCardReader.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/MfiBtPrinterConnection.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/NetworkDiscoverer.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/PrinterStatus.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/PrinterStatusMessages.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/SGD.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/SmartCardReader.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/TcpPrinterConnection.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/ToolsUtil.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/ZebraErrorCode.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/ZebraPrinter.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/ZebraPrinterConnection.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/ZebraPrinterFactory.h" />
-        <header-file src="src/ios/ZebraPrinter/lib/include/ZplPrintMode.h" />
+        <header-file src="src/ios/lib/include/DiscoveredPrinter.h" />
+        <header-file src="src/ios/lib/include/DiscoveredPrinterNetwork.h" />
+        <header-file src="src/ios/lib/include/FieldDescriptionData.h" />
+        <header-file src="src/ios/lib/include/FileUtil.h" />
+        <header-file src="src/ios/lib/include/FormatUtil.h" />
+        <header-file src="src/ios/lib/include/GraphicsUtil.h" />
+        <header-file src="src/ios/lib/include/MagCardReader.h" />
+        <header-file src="src/ios/lib/include/MfiBtPrinterConnection.h" />
+        <header-file src="src/ios/lib/include/NetworkDiscoverer.h" />
+        <header-file src="src/ios/lib/include/PrinterStatus.h" />
+        <header-file src="src/ios/lib/include/PrinterStatusMessages.h" />
+        <header-file src="src/ios/lib/include/SGD.h" />
+        <header-file src="src/ios/lib/include/SmartCardReader.h" />
+        <header-file src="src/ios/lib/include/TcpPrinterConnection.h" />
+        <header-file src="src/ios/lib/include/ToolsUtil.h" />
+        <header-file src="src/ios/lib/include/ZebraErrorCode.h" />
+        <header-file src="src/ios/lib/include/ZebraPrinter.h" />
+        <header-file src="src/ios/lib/include/ZebraPrinterConnection.h" />
+        <header-file src="src/ios/lib/include/ZebraPrinterFactory.h" />
+        <header-file src="src/ios/lib/include/ZplPrintMode.h" />
         <!--Zebra SDK library-->
         <source-file src="src/ios/lib/libZSDK_API.a"/>
         <!-- Briding File -->
