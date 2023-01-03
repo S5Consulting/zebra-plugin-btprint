@@ -35,12 +35,12 @@
     BOOL success = [thePrinterConn open];
     NSError *error = nil;
 // Send the data to printer as a byte array.
-    success = success && [thePrinterConn write:[data dataUsingEncoding:NSUTF8StringEncoding] error:&error];
-    if (success != YES || error != nil) {
-        UIAlertView *errorAlert = [[UIAlertView alloc] initWithTitle:@"Error" message:[error localizedDescription] delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles:nil];
-        [errorAlert show];
-        [errorAlert release];
-    }
+//  success = success && [thePrinterConn write:[data dataUsingEncoding:NSUTF8StringEncoding] error:&error];
+//  if (success != YES || error != nil) {
+//      UIAlertView *errorAlert = [[UIAlertView alloc] initWithTitle:@"Error" message:[error localizedDescription] delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles:nil];
+//      [errorAlert show];
+//      [errorAlert release];
+//   }
 // Close the connection to release resources.
     [thePrinterConn close];
     //[thePrinterConn release];
