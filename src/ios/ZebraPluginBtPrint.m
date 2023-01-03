@@ -1,7 +1,7 @@
 /********* ZebraPluginBtPrint.m Cordova Plugin Implementation *******/
 
-#import <Foundation/Foundation.h>
-#import <ExternalAccessory/ExternalAccessory.h>
+@import Foundation;
+@import ExternalAccessory;
 #import "MfiBtPrinterConnection.h"
 
 @interface ZebraPluginBtPrint : NSObject 
@@ -10,10 +10,7 @@
 
 @end
 
-@implementation ZebraPluginBtPrint {
-    ZebraPrinterConnection *thePrinterConn;
-    EAAccessoryManager *sam;
-}
+@implementation ZebraPluginBtPrint 
 
 
 //Sends the printing content to the printer controller and opens them.
@@ -46,7 +43,7 @@
     }
 // Close the connection to release resources.
     [thePrinterConn close];
-    [thePrinterConn release];
+    //[thePrinterConn release];
 }
 
 @end
