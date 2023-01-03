@@ -27,6 +27,7 @@
         <header-file src="src/ios/lib/include/NetworkDiscoverer.h" />
         <header-file src="src/ios/lib/include/PrinterStatus.h" />
         <header-file src="src/ios/lib/include/PrinterStatusMessages.h" />
+        <header-file src="src/ios/lib/include/ResponseValidator.h"/>
         <header-file src="src/ios/lib/include/SGD.h" />
         <header-file src="src/ios/lib/include/SmartCardReader.h" />
         <header-file src="src/ios/lib/include/TcpPrinterConnection.h" />
