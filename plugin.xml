@@ -39,7 +39,7 @@
         <!--Zebra SDK library-->
         <source-file src="src/ios/lib/libZSDK_API.a"/>
         <!-- Briding File -->
-        <header-file src="src/ios/ZebraPrinter/ZebraPluginBridgingHeader.h" type="BridgingHeader" />
+        <header-file src="src/ios/ZebraPluginBridgingHeader.h" type="BridgingHeader" />
         <!--Plugin source-->
         <source-file src="src/ios/ZebraPluginBtPrint.m" />
     </platform>
