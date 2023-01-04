@@ -2,11 +2,12 @@
 
 @import ExternalAccessory;
 @import UIKit;
+#import <Cordova/CDVPlugin.h>
 #import "MfiBtPrinterConnection.h"
 
 @interface ZebraPluginBtPrint : NSObject 
 
-    - (void) print:(NSString *)data;
+    - (void)print:(CDVInvokedUrlCommand*)command
 
 @end
 
@@ -14,11 +15,12 @@
 
 
 //Sends the printing content to the printer controller and opens them.
-- (void)print:(NSString *)data
+- (void)print:(CDVInvokedUrlCommand*)command
 {
 
     NSString *serialNumber = @"";
-
+    NSString* mac = [command.arguments objectAtIndex:0];
+    NSString* data = [command.arguments objectAtIndex:1];
 //Find the Zebra Bluetooth Accessory
     EAAccessoryManager *sam = [EAAccessoryManager sharedAccessoryManager];
     NSArray *connectedAccessories = [sam connectedAccessories];
@@ -39,7 +41,7 @@ success = success && [thePrinterConn write:[data dataUsingEncoding:NSUTF8StringE
   if (success != YES || error != nil) {
       UIAlertView *errorAlert = [[UIAlertView alloc] initWithTitle:@"Error" message:[error localizedDescription] delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles:nil];
       [errorAlert show];
-      [errorAlert release];
+     // [errorAlert release];
    }
 // Close the connection to release resources.
     [thePrinterConn close];
