@@ -7,7 +7,7 @@
 
 @interface ZebraPluginBtPrint : NSObject 
 
-    - (void)print:(CDVInvokedUrlCommand*)command
+    - (void)print:(CDVInvokedUrlCommand*)command;
 
 @end
 
