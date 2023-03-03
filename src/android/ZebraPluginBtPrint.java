@@ -14,7 +14,7 @@ import org.json.JSONException;
 
 import java.util.UUID;
 
-public class BtPrint extends CordovaPlugin {
+public class ZebraPluginBtPrint extends CordovaPlugin {
     private static String LOG_TAG = "BluetoothPrint";
 
     private BluetoothAdapter bluetoothAdapter;
