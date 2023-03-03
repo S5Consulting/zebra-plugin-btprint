@@ -1,6 +1,6 @@
 /********* ZebraPluginBtPrint.m Cordova Plugin Implementation *******/
 
-@import ExternalAccessory;
+/* @import ExternalAccessory;
 @import UIKit;
 #import <Cordova/CDVPlugin.h>
 #import "MfiBtPrinterConnection.h"
@@ -46,6 +46,6 @@ success = success && [thePrinterConn write:[data dataUsingEncoding:NSUTF8StringE
 // Close the connection to release resources.
     [thePrinterConn close];
     //[thePrinterConn release];
-}
+} 
 
-@end
+@end  */
