@@ -7,7 +7,7 @@
 
 @interface ZebraPluginBtPrint : NSObject 
 
-    - (void)print:(CDVInvokedUrlCommand*)command;
+ //   - (void)print:(CDVInvokedUrlCommand*)command;
 
 @end
 
@@ -15,7 +15,7 @@
 
 
 //Sends the printing content to the printer controller and opens them.
-- (void)print:(CDVInvokedUrlCommand*)command
+/* - (void)print:(CDVInvokedUrlCommand*)command
 {
 
     NSString *serialNumber = @"";
@@ -48,4 +48,4 @@ success = success && [thePrinterConn write:[data dataUsingEncoding:NSUTF8StringE
     //[thePrinterConn release];
 } 
 
-@end 
+@end  */
