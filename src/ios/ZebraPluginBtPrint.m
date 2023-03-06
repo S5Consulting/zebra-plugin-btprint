@@ -32,9 +32,9 @@
         }
     }
 // Instantiate connection to Zebra Bluetooth accessory
-   id<ZebraPrinterConnection, NSObject> thePrinterConn = [[MfiBtPrinterConnection alloc] initWithSerialNumber:serialNumber];
+    id<ZebraPrinterConnection, NSObject> thePrinterConn = [[MfiBtPrinterConnection alloc] initWithSerialNumber:serialNumber];
 // Open the connection - physical connection is established here.
-    BOOL success = [thePrinterConn open];
+  /*  BOOL success = [thePrinterConn open];
     NSError *error = nil;
 // Send the data to printer as a byte array.
 success = success && [thePrinterConn write:[data dataUsingEncoding:NSUTF8StringEncoding] error:&error];
@@ -44,7 +44,7 @@ success = success && [thePrinterConn write:[data dataUsingEncoding:NSUTF8StringE
      // [errorAlert release];
    }
 // Close the connection to release resources.
-    [thePrinterConn close];
+    [thePrinterConn close]; */
     //[thePrinterConn release];
 } 
 
