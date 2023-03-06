@@ -47,5 +47,5 @@ success = success && [thePrinterConn write:[data dataUsingEncoding:NSUTF8StringE
     [thePrinterConn close];
     //[thePrinterConn release];
 } 
-
-@end  */
+*/
+@end  
