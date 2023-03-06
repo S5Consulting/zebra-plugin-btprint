@@ -4,6 +4,7 @@
 @import UIKit;
 #import <Cordova/CDVPlugin.h>
 #import "MfiBtPrinterConnection.h"
+#import "ZebraPrinterConnection.h"
 
 @interface ZebraPluginBtPrint : NSObject 
 
