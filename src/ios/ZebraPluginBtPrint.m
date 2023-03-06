@@ -15,10 +15,10 @@
 
 
 //Sends the printing content to the printer controller and opens them.
-/* - (void)print:(CDVInvokedUrlCommand*)command
+- (void)print:(CDVInvokedUrlCommand*)command
 {
 
-    NSString *serialNumber = @"";
+   /*  NSString *serialNumber = @"";
     NSString* mac = [command.arguments objectAtIndex:0];
     NSString* data = [command.arguments objectAtIndex:1];
 //Find the Zebra Bluetooth Accessory
@@ -44,8 +44,8 @@ success = success && [thePrinterConn write:[data dataUsingEncoding:NSUTF8StringE
      // [errorAlert release];
    }
 // Close the connection to release resources.
-    [thePrinterConn close];
+    [thePrinterConn close]; */
     //[thePrinterConn release];
 } 
-*/
+
 @end  
