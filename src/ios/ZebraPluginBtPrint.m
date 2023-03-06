@@ -1,10 +1,12 @@
 /********* ZebraPluginBtPrint.m Cordova Plugin Implementation *******/
 
-@import ExternalAccessory;
+//@import ExternalAccessory;
+#import <ExternalAccessory/ExternalAccessory.h>
 @import UIKit;
 #import <Cordova/CDVPlugin.h>
 #import "ZebraPrinterConnection.h"
 #import "MfiBtPrinterConnection.h"
+//
 
 
 @interface ZebraPluginBtPrint : NSObject 
