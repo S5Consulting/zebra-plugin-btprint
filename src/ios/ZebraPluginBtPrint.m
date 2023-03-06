@@ -18,11 +18,11 @@
 - (void)print:(CDVInvokedUrlCommand*)command
 {
 
-   /*  NSString *serialNumber = @"";
+     NSString *serialNumber = @"";
     NSString* mac = [command.arguments objectAtIndex:0];
     NSString* data = [command.arguments objectAtIndex:1];
 //Find the Zebra Bluetooth Accessory
-    EAAccessoryManager *sam = [EAAccessoryManager sharedAccessoryManager];
+  /*  EAAccessoryManager *sam = [EAAccessoryManager sharedAccessoryManager];
     NSArray *connectedAccessories = [sam connectedAccessories];
     for (EAAccessory *accessory in connectedAccessories) {
         if([accessory.protocolStrings indexOfObject:@"com.zebra.rawport"] != NSNotFound) {
