@@ -3,12 +3,13 @@
 @import ExternalAccessory;
 @import UIKit;
 #import <Cordova/CDVPlugin.h>
-#import "MfiBtPrinterConnection.h"
 #import "ZebraPrinterConnection.h"
+#import "MfiBtPrinterConnection.h"
+
 
 @interface ZebraPluginBtPrint : NSObject 
 
- //   - (void)print:(CDVInvokedUrlCommand*)command;
+   - (void)print:(CDVInvokedUrlCommand*)command;
 
 @end
 
@@ -19,7 +20,7 @@
 - (void)print:(CDVInvokedUrlCommand*)command
 {
 
-     NSString *serialNumber = @"";
+    NSString *serialNumber = @"";
     NSString* mac = [command.arguments objectAtIndex:0];
     NSString* data = [command.arguments objectAtIndex:1];
 //Find the Zebra Bluetooth Accessory
