@@ -22,7 +22,7 @@
     NSString* mac = [command.arguments objectAtIndex:0];
     NSString* data = [command.arguments objectAtIndex:1];
 //Find the Zebra Bluetooth Accessory
-  /*  EAAccessoryManager *sam = [EAAccessoryManager sharedAccessoryManager];
+    EAAccessoryManager *sam = [EAAccessoryManager sharedAccessoryManager];
     NSArray *connectedAccessories = [sam connectedAccessories];
     for (EAAccessory *accessory in connectedAccessories) {
         if([accessory.protocolStrings indexOfObject:@"com.zebra.rawport"] != NSNotFound) {
@@ -32,7 +32,7 @@
         }
     }
 // Instantiate connection to Zebra Bluetooth accessory
-    id<ZebraPrinterConnection, NSObject> thePrinterConn = [[MfiBtPrinterConnection alloc] initWithSerialNumber:serialNumber];
+ /*   id<ZebraPrinterConnection, NSObject> thePrinterConn = [[MfiBtPrinterConnection alloc] initWithSerialNumber:serialNumber];
 // Open the connection - physical connection is established here.
     BOOL success = [thePrinterConn open];
     NSError *error = nil;
