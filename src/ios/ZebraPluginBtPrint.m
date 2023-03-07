@@ -1,7 +1,8 @@
 /********* ZebraPluginBtPrint.m Cordova Plugin Implementation *******/
 
-@import ExternalAccessory;
-//#import <ExternalAccessory/ExternalAccessory.h>
+#import <Foundation/Foundation.h>
+//@import ExternalAccessory;
+#import <ExternalAccessory/ExternalAccessory.h>
 @import UIKit;
 #import <Cordova/CDVPlugin.h>
 #import "ZebraPrinterConnection.h"
@@ -36,6 +37,9 @@
         }
     }
 // Instantiate connection to Zebra Bluetooth accessory
+//
+//  ***Build breaks here***
+//
     id<ZebraPrinterConnection, NSObject> thePrinterConn = [[MfiBtPrinterConnection alloc] initWithSerialNumber:serialNumber];
 // Open the connection - physical connection is established here.
   /*  BOOL success = [thePrinterConn open];
