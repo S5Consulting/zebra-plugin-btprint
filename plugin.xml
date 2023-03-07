@@ -38,7 +38,7 @@
         <header-file src="src/ios/lib/include/ZebraPrinterFactory.h" />
         <header-file src="src/ios/lib/include/ZplPrintMode.h" />
         <!--Zebra SDK library-->
-        <source-file src="src/ios/lib/libZSDK_API.a"/>
+        <source-file src="src/ios/lib/libZSDK_API.a" framework="true"/>
         <!-- Bridging File -->
         <header-file src="src/ios/ZebraPluginBridgingHeader.h" type="BridgingHeader" />
         <!--Plugin source-->
@@ -56,6 +56,6 @@
         </config-file>
         <source-file src="src/android/ZebraPluginBtPrint.java" target-dir="src/zebra-plugin-btprint/ZebraPluginBtPrint" />
         <!--Zebra SDK-->
-        <lib-file src="src/android/lib/ZSDK_ANDROID_API.jar"/>
+        <lib-file src="src/android/lib/ZSDK_ANDROID_API.jar" target="libs/ZSDK_ANDROID_API.jar"/>
     </platform>
 </plugin>
