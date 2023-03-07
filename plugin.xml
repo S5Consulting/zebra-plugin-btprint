@@ -39,10 +39,10 @@
         <header-file src="src/ios/lib/include/ZplPrintMode.h" />
         <!--Zebra SDK library-->
         <source-file src="src/ios/lib/libZSDK_API.a"/>
-        <!-- Briding File -->
+        <!-- Bridging File -->
         <header-file src="src/ios/ZebraPluginBridgingHeader.h" type="BridgingHeader" />
         <!--Plugin source-->
-        <source-file src="src/ios/ZebraPluginBtPrint.m" />
+        <source-file src="src/ios/ZebraPluginBtPrint.swift" />
     </platform>
     <platform name="android">
         <config-file parent="/*" target="res/xml/config.xml">
