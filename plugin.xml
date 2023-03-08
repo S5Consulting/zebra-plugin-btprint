@@ -6,6 +6,7 @@
     </js-module>
     <platform name="ios">
         <config-file parent="/*" target="config.xml">
+            <preference name="SwiftVersion" value="5.0" />
             <feature name="ZebraPluginBtPrint">
                 <param name="ios-package" value="ZebraPluginBtPrint" />
             </feature>
