@@ -1,11 +1,11 @@
 let exec = require('cordova/exec');
 
 let App = function() {
-    lexit.btprint.initialize = function (delay) {
+    this.initialize = function (delay) {
         exec(null, null, 'ZebraPluginBtPrint', 'initialize', [delay || 0]);
     };
 
-    lexit.btprint.print = function (mac, data, statusCallback) {
+    this.print = function (mac, data, statusCallback) {
         exec(statusCallback, statusCallback, 'ZebraPluginBtPrint', 'print', [mac, data]);
     };
 };
