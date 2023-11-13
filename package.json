@@ -1,9 +1,9 @@
 {
-  "name": "zebra-plugin-btprint",
-  "version": "1.3.7",
+  "name": "s5-zebra-plugin-btprint",
+  "version": "1.4.0",
   "description": "Print to Zebra over bluetooth from Android and iOS",
   "cordova": {
-    "id": "zebra-plugin-btprint",
+    "id": "s5-zebra-plugin-btprint",
     "platforms": [
       "ios",
       "android"
