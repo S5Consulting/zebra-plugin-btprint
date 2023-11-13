@@ -40,12 +40,12 @@ class ZebraPluginBtPrint: CDVPlugin {
         let data = cpcl.data(using: .utf8)
 
         var pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR)
-
+        var printError: NSError!
         if self.isConnected() {
             do {
                 printerConnection?.close()
                 try printerConnection?.open()
-                try printerConnection?.write(data)
+                try printerConnection?.write(data, error: &printError)
                 pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
             } catch let error as NSError {
                 NSLog("Error printing: \(error.localizedDescription)")
