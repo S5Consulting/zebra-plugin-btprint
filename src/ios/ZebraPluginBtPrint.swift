@@ -58,19 +58,6 @@ class ZebraPluginBtPrint: CDVPlugin {
 
         self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
     }
-
-    /**
-     * Check if we are connectd to the printer or not
-     *
-     */
-    @objc func isConnected(_ call:CAPPluginCall){
-        let connected = self.isConnected();
-        NSLog("ZebraPrinter::isConnected {0}", connected)
-        call.resolve([
-            "connected": connected
-            ])
-    }
-
     /**
      * Check if we are connectd to the printer or not
      *
