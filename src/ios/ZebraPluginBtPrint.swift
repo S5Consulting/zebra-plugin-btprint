@@ -3,20 +3,46 @@ import ExternalAccessory
 
 @objc(ZebraPluginBtPrint)
 class ZebraPluginBtPrint: CDVPlugin {
-    var printerConnection: ZebraPrinterConnection?
+    var printerConnection: MfiBtPrinterConnection?
     var printer: ZebraPrinter?
+    var manager: EAAccessoryManager!
+    private var serialNumber: String?
+    var isConnected: Bool = false
+
     
-    // This 
-    func initialize(_ command: CDVInvokedUrlCommand) {
-
+    func findConnectedPrinter(completion: (Bool) -> Void) {
+        let manager = EAAccessoryManager.shared()
+        let connectedDevices = manager.connectedAccessories
+        for device in connectedDevices {
+            if device.protocolStrings.contains("com.zebra.rawport") {
+                serialNumber = device.serialNumber
+                connectToPrinter(completion: { completed in
+                    completion(completed)
+                })
+            }
+        }
     }
-
-
-    // old print function 
+    
+    private func connectToPrinter( completion: (Bool) -> Void) {
+        printerConnection = MfiBtPrinterConnection(serialNumber: serialNumber)
+        printerConnection?.open()
+        completion(true)
+    }
+    
+    func initialize(_ command: CDVInvokedUrlCommand) {
+        manager = EAAccessoryManager.shared()
+        findConnectedPrinter { [weak self] bool in
+             if let strongSelf = self {
+                 strongSelf.isConnected = bool
+             }
+         }
+    }
+    
+    // old print function
     // @objc func print(_ command: CDVInvokedUrlCommand) {
     //     let cpcl = command.arguments[0] as? String ?? ""
     //     let data = cpcl.data(using: .utf8)
-
+    
     //         //Connect printer
     //         do {
     //             try printerConnection.open()
@@ -24,24 +50,26 @@ class ZebraPluginBtPrint: CDVPlugin {
     //             NSLog("Error connecting to printer")
     //             return
     //         }
-
+    
     //     do {
     //         try printer.send(data)
     //         statusCallback?()
-    //     } 
-
+    //     }
+    
     //     printerConnection.close()
     // }
-
-
-    // new print function after adapting code from capacitor to Cordova 
+    
+    
+    // new print function after adapting code from capacitor to Cordova
     @objc func print(_ command: CDVInvokedUrlCommand) {
         let cpcl = command.arguments[0] as? String ?? ""
         let data = cpcl.data(using: .utf8)
-
-        var pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR)
+        
         var printError: NSError!
-        if self.isConnected() {
+        
+        var pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR)
+        
+        if self.isConnected {
             do {
                 printerConnection?.close()
                 try printerConnection?.open()
@@ -55,17 +83,17 @@ class ZebraPluginBtPrint: CDVPlugin {
             NSLog("Printer not connected")
             pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Printer Not Connected")
         }
-
+        
         self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
     }
     /**
      * Check if we are connectd to the printer or not
      *
-     */
+    
     private func isConnected() -> Bool{
         //printerConnection!.isConnected lies, it says it's open when it isn't
         return self.printerConnection != nil && (self.printerConnection?.isConnected() ?? false)
     }
-
-
+     */
+    
 }
