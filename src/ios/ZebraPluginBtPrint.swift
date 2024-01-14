@@ -10,12 +10,14 @@ class ZebraPluginBtPrint: CDVPlugin {
     var isConnected: Bool = false
 
     
-    func findConnectedPrinter(completion: (Bool) -> Void) {
+    @objc func findConnectedPrinter(completion: (Bool) -> Void) {
         let manager = EAAccessoryManager.shared()
         let connectedDevices = manager.connectedAccessories
         for device in connectedDevices {
             if device.protocolStrings.contains("com.zebra.rawport") {
                 serialNumber = device.serialNumber
+                NSLog("Zebra device found with serial number -> ")
+                NSLog(serialNumber ?? "")
                 connectToPrinter(completion: { completed in
                     completion(completed)
                 })
@@ -23,14 +25,13 @@ class ZebraPluginBtPrint: CDVPlugin {
         }
     }
     
-    private func connectToPrinter( completion: (Bool) -> Void) {
+    @objc private func connectToPrinter( completion: (Bool) -> Void) {
         printerConnection = MfiBtPrinterConnection(serialNumber: serialNumber)
         printerConnection?.open()
         completion(true)
     }
     
-    func initialize(_ command: CDVInvokedUrlCommand) {
-        manager = EAAccessoryManager.shared()
+    @objc func initialize(_ command: CDVInvokedUrlCommand) {
         findConnectedPrinter { [weak self] bool in
              if let strongSelf = self {
                  strongSelf.isConnected = bool
