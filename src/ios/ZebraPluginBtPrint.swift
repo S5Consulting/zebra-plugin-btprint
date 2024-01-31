@@ -8,14 +8,28 @@ class ZebraPluginBtPrint: CDVPlugin {
     var manager: EAAccessoryManager!
     private var serialNumber: String?
     var isConnected: Bool = false
-
     
-    func findConnectedPrinter(completion: (Bool) -> Void) {
+    /**
+     Finds a connected printer that matches the specified protocol string.
+     This method searches through the connected accessories, identifying any printer that supports the 'com.zebra.rawport' protocol.
+     If such a device is found, it attempts to establish a connection with the printer and updates the `serialNumber` property with the device's serial number.
+     
+     Usage:
+     Call this method when  need to find and connect to a Zebra printer. The completion handler will be called with a boolean indicating the success of the operation.
+     - Parameter completion: A closure that is called when the printer connection attempt is complete. The closure takes a Boolean parameter, which is `true` if a printer is found and successfully connected; otherwise, `false`.
+     NOTE:
+     - The method uses 'EAAccessoryManager' to access connected accessories.
+     - It only connects to printers that support the 'com.zebra.rawport' protocol.
+     - The serial number of the printer is logged if found.
+     - The printer need to be already paired with the iOS Device
+     */
+    @objc func findConnectedPrinter(completion: (Bool) -> Void) {
         let manager = EAAccessoryManager.shared()
         let connectedDevices = manager.connectedAccessories
         for device in connectedDevices {
             if device.protocolStrings.contains("com.zebra.rawport") {
                 serialNumber = device.serialNumber
+                NSLog("Zebra device found with serial number -> \(serialNumber ?? "N.D")")
                 connectToPrinter(completion: { completed in
                     completion(completed)
                 })
@@ -23,50 +37,42 @@ class ZebraPluginBtPrint: CDVPlugin {
         }
     }
     
-    private func connectToPrinter( completion: (Bool) -> Void) {
+    /**
+     Connection to the printer. Start via MfiBtPrinterConnection a new connection
+     */
+    @objc private func connectToPrinter( completion: (Bool) -> Void) {
         printerConnection = MfiBtPrinterConnection(serialNumber: serialNumber)
         printerConnection?.open()
         completion(true)
     }
     
-    func initialize(_ command: CDVInvokedUrlCommand) {
-        manager = EAAccessoryManager.shared()
+    /**
+     Initializes the printer connection process.
+     This method is responsible for initiating the process of finding and connecting to a Zebra printer. It calls `findConnectedPrinter`,
+     a method that searches for a connected printer that supports the specified protocol string. If a compatible printer is found and successfully connected,
+     the `isConnected` property of the class is updated accordingly.
+     */
+    @objc func initialize(_ command: CDVInvokedUrlCommand) {
         findConnectedPrinter { [weak self] bool in
-             if let strongSelf = self {
-                 strongSelf.isConnected = bool
-             }
-         }
+            if let strongSelf = self {
+                strongSelf.isConnected = bool
+            }
+        }
     }
     
-    // old print function
-    // @objc func print(_ command: CDVInvokedUrlCommand) {
-    //     let cpcl = command.arguments[0] as? String ?? ""
-    //     let data = cpcl.data(using: .utf8)
-    
-    //         //Connect printer
-    //         do {
-    //             try printerConnection.open()
-    //         } catch let error {
-    //             NSLog("Error connecting to printer")
-    //             return
-    //         }
-    
-    //     do {
-    //         try printer.send(data)
-    //         statusCallback?()
-    //     }
-    
-    //     printerConnection.close()
-    // }
-    
-    
-    // new print function after adapting code from capacitor to Cordova
+    /**
+     Prints data using a connected Zebra printer. -----  function after adapting code from capacitor to Cordova
+     
+     This method is responsible for printing data on a Zebra printer. It first checks if the printer is connected. If it is, the method attempts to open the printer connection,
+     send the provided data for printing, and then captures the result of the print operation. If the printer is not connected or if any error occurs during the printing process,
+     an appropriate error message is generated.
+     
+     */
     @objc func print(_ command: CDVInvokedUrlCommand) {
         let cpcl = command.arguments[0] as? String ?? ""
         let data = cpcl.data(using: .utf8)
         
         var printError: NSError!
-        
         var pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR)
         
         if self.isConnected {
@@ -86,14 +92,5 @@ class ZebraPluginBtPrint: CDVPlugin {
         
         self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
     }
-    /**
-     * Check if we are connectd to the printer or not
-     *
-    
-    private func isConnected() -> Bool{
-        //printerConnection!.isConnected lies, it says it's open when it isn't
-        return self.printerConnection != nil && (self.printerConnection?.isConnected() ?? false)
-    }
-     */
     
 }
