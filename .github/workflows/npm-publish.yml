@@ -33,6 +33,7 @@ jobs:
           args:
             -Dsonar.projectKey=S5Consulting_zebra-plugin-btprint
             -Dsonar.organization=s5consulting 
+            -Dsonar.sources=.
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
