@@ -31,7 +31,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args:
-            -Dsonar.projectKey=zebra-plugin-btprint
+            -Dsonar.projectKey=S5Consulting_zebra-plugin-btprint
             -Dsonar.organization=s5consulting 
   publish-npm:
     needs: build
