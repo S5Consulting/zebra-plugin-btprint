@@ -25,10 +25,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action
+        uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args:
+            -Dsonar.projectKey=zebra-plugin-btprint
+            -Dsonar.organization=s5consulting 
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
