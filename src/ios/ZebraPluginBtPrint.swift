@@ -1,5 +1,7 @@
 import Foundation
 import ExternalAccessory
+import CoreBluetooth
+import UIKit
 
 @objc(ZebraPluginBtPrint)
 class ZebraPluginBtPrint: CDVPlugin {
@@ -8,6 +10,14 @@ class ZebraPluginBtPrint: CDVPlugin {
     var manager: EAAccessoryManager!
     private var serialNumber: String?
     var isConnected: Bool = false
+    
+    // BluetoothManagement
+    private var centralManager: CBCentralManager!
+    private var connectedPeripheral: CBPeripheral?
+
+    // PeripheralManagement
+    var peripherals: [CBPeripheral] = []
+    var alertController: UIAlertController?
     
     /**
      Finds a connected printer that matches the specified protocol string.
@@ -26,14 +36,19 @@ class ZebraPluginBtPrint: CDVPlugin {
     @objc func findConnectedPrinter(completion: (Bool) -> Void) {
         let manager = EAAccessoryManager.shared()
         let connectedDevices = manager.connectedAccessories
+        var deviceConnected = false
         for device in connectedDevices {
             if device.protocolStrings.contains("com.zebra.rawport") {
                 serialNumber = device.serialNumber
+                deviceConnected = true
                 NSLog("Zebra device found with serial number -> \(serialNumber ?? "N.D")")
                 connectToPrinter(completion: { completed in
                     completion(completed)
                 })
             }
+        }
+        if(!deviceConnected){
+            initializeBluetooth()
         }
     }
     
@@ -69,9 +84,14 @@ class ZebraPluginBtPrint: CDVPlugin {
      
      */
     @objc func print(_ command: CDVInvokedUrlCommand) {
+        
         let cpcl = command.arguments[0] as? String ?? ""
         let data = cpcl.data(using: .utf8)
         
+        if(connectedPeripheral != nil){
+            printToConnectedPeripheral(data: cpcl, peripheral: self.connectedPeripheral!)
+            return
+        }
         var printError: NSError!
         var pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR)
         
@@ -93,4 +113,105 @@ class ZebraPluginBtPrint: CDVPlugin {
         self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
     }
     
+    
+    /// ------------ NEW BLUETOOTH MANAGEMENT ---------
+    func initializeBluetooth(){
+        centralManager = CBCentralManager(delegate: self, queue: nil)
+        centralManager.scanForPeripherals(withServices: nil, options: nil)
+        self.showDeviceSelectionModal()
+    }
+    
+}
+
+
+extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
+  
+    /// ----------------------- BLUETOOTH MANAGEMENT -----------------------
+
+    // bluetooth status listener
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+            if central.state == .poweredOn {
+                NSLog("Bluetooth on")
+                centralManager.scanForPeripherals(withServices: nil, options: nil)
+            }
+        }
+        
+    // Found new peripheral
+    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
+        // check for zq610 printer and update modal
+        if let name = peripheral.name, name.contains("ZQ610") {
+            updateAlertWithPeripheral(peripheral)
+        }
+        NSLog("Peripheral founded: \(peripheral.identifier.uuid) \(peripheral.name)")
+    // Autoconnect if macaddress are available
+    //if let macAddress = printerMACAddress, peripheral.identifier.uuidString == macAddress {
+    //  connectedPeripheral = peripheral
+    //  centralManager.stopScan()
+    //  centralManager.connect(peripheral, options: nil)
+    //}
+    }
+    
+    // Connected to peripheral
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        NSLog("Connesso alla stampante: \(peripheral.name) \(peripheral.services)")
+        peripheral.delegate = self
+        self.connectedPeripheral = peripheral
+        // Check with service uuid
+        //peripheral.discoverServices([serviceUUID])
+    }
+
+    // Disconnect from peripheral
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        NSLog("Disconnesso dalla stampante: \(peripheral.name)")
+        connectedPeripheral = nil
+    }
+    
+    
+    /// ----------------------- DIALOG MANAGEMENT -----------------------
+    
+    func showDeviceSelectionModal() {
+        
+        alertController = UIAlertController(title: "Select a device", message: "Select a ZQ610 Zebra printer", preferredStyle: .actionSheet)
+        
+        let cancelAction = UIAlertAction(title: "Annulla", style: .cancel) { _ in
+            self.alertController = nil // Resetta il riferimento quando l'alert viene chiuso
+        }
+        alertController?.addAction(cancelAction)
+        
+        self.viewController.present(alertController!, animated: true, completion: nil)
+    }
+
+    func updateAlertWithPeripheral(_ peripheral: CBPeripheral) {
+        guard let name = peripheral.name, name.contains("ZQ610"), let alert = alertController else {
+            return
+        }
+        
+        if !alert.actions.contains(where: { $0.title == name }) {
+            let action = UIAlertAction(title: name, style: .default, handler: { _ in
+                self.connectToPeripheral(peripheral)
+            })
+            alert.addAction(action)
+        }
+    }
+    
+    func connectToPeripheral(_ peripheral:CBPeripheral){
+        NSLog("Connessione per Nome")
+        connectedPeripheral = peripheral
+        centralManager.stopScan()
+        centralManager.connect(peripheral, options: nil)
+        printToConnectedPeripheral(data: "pippobaudo", peripheral: self.connectedPeripheral!)
+    }
+    
+    // print data
+    
+    // Funzione per stampare una volta connessa alla periferica
+    private func printToConnectedPeripheral(data: String, peripheral: CBPeripheral) {
+      NSLog("Start Print....")
+        guard let services = peripheral.services else {return }
+        let characteristic = services[0].characteristics?[0]
+        if(characteristic != nil) {
+            let dataToPrint = Data(data.utf8)
+            peripheral.writeValue(dataToPrint, for: characteristic!, type: .withoutResponse)
+        }
+    }
 }
