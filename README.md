@@ -18,6 +18,13 @@ Guide to print layout: http://labelary.com/viewer.html
 - Search the printer with the iOS base Bluetooth device finder and pair the printer
 - Start the application, the printer will be visible and the print can be requested
 
+Initialize has this parameters : 
+- delay: int 
+- wildcard: string | search for bluetooth device with this pattern
+- printername: string | autoconnect with the device 
+- cancelButtonName: string | cancel button name
+
+the event 'deviceSelected' return selected device name for connection
 
 
 Guide to print layout: http://labelary.com/viewer.html

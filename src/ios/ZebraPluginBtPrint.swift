@@ -10,7 +10,6 @@ class ZebraPluginBtPrint: CDVPlugin {
     var manager: EAAccessoryManager!
     private var serialNumber: String?
     var isConnected: Bool = false
-    
     // BluetoothManagement
     private var centralManager: CBCentralManager!
     private var connectedPeripheral: CBPeripheral?
@@ -19,6 +18,11 @@ class ZebraPluginBtPrint: CDVPlugin {
     var peripherals: [CBPeripheral] = []
     var alertController: UIAlertController?
     
+    
+    var wildcard: String?
+    var printerName: String?
+    var cancelText: String = "Cancel"
+
     /**
      Finds a connected printer that matches the specified protocol string.
      This method searches through the connected accessories, identifying any printer that supports the 'com.zebra.rawport' protocol.
@@ -68,6 +72,27 @@ class ZebraPluginBtPrint: CDVPlugin {
      the `isConnected` property of the class is updated accordingly.
      */
     @objc func initialize(_ command: CDVInvokedUrlCommand) {
+        
+        //
+        
+        // Load parameters
+        // parameters : Wildcard | Pattern for name search
+        let wildcardParam: String? = command.arguments.count > 1 ? (command.arguments[1] as? String ) : nil
+        self.wildcard = wildcardParam != "" ? wildcardParam : nil
+
+        // parameters : Printer name | Name of the printer for a direct bluetooth connection
+        let printerNameParam: String? = command.arguments.count > 2 ?  (command.arguments[2] as! String) : nil
+        self.printerName = printerNameParam != "" ? printerNameParam : nil
+
+        // parameters : Cancel button name | Name of the button for close the bluetooth modals
+        let cancelButtonParam: String = command.arguments.count > 3 ? (command.arguments[3] as! String ) : "Cancel"
+        self.cancelText = cancelButtonParam
+
+        NSLog("\(command.arguments[1])")
+        NSLog("Wildcard: \(self.wildcard ?? "N.D")")
+        NSLog("PrinterName: \(self.printerName ?? "N.D")")
+        NSLog("CancelText: \(self.cancelText)")
+    
         findConnectedPrinter { [weak self] bool in
             if let strongSelf = self {
                 strongSelf.isConnected = bool
@@ -118,7 +143,9 @@ class ZebraPluginBtPrint: CDVPlugin {
     func initializeBluetooth(){
         centralManager = CBCentralManager(delegate: self, queue: nil)
         centralManager.scanForPeripherals(withServices: nil, options: nil)
-        self.showDeviceSelectionModal()
+        if(self.printerName == nil){ // Autoconnect if printerName is available
+            self.showDeviceSelectionModal()
+        }
     }
     
 }
@@ -139,10 +166,18 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
     // Found new peripheral
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
         // check for zq610 printer and update modal
-        if let name = peripheral.name, name.contains("ZQ610") {
+
+        // Autoconnect if printerName are available
+        if let name = peripheral.name?.lowercased(), self.printerName != nil, name == self.printerName?.lowercased() {
+            connectToPeripheral(peripheral)
+            return
+        }
+        
+        if let name = peripheral.name?.lowercased(), self.wildcard == nil || name.contains(self.wildcard!.lowercased())
+        {
             updateAlertWithPeripheral(peripheral)
         }
-        NSLog("Peripheral founded: \(peripheral.identifier.uuid) \(peripheral.name)")
+        NSLog("Peripheral founded: \(peripheral.identifier.uuid ) \(peripheral.name ?? "")")
     // Autoconnect if macaddress are available
     //if let macAddress = printerMACAddress, peripheral.identifier.uuidString == macAddress {
     //  connectedPeripheral = peripheral
@@ -153,7 +188,7 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
     
     // Connected to peripheral
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        NSLog("Connesso alla stampante: \(peripheral.name) \(peripheral.services)")
+        NSLog("Connected to printer: \(peripheral.name) \(peripheral.services)")
         peripheral.delegate = self
         self.connectedPeripheral = peripheral
         // Check with service uuid
@@ -162,7 +197,7 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
 
     // Disconnect from peripheral
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        NSLog("Disconnesso dalla stampante: \(peripheral.name)")
+        NSLog("Disconnected from printer: \(peripheral.name)")
         connectedPeripheral = nil
     }
     
@@ -173,7 +208,7 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
         
         alertController = UIAlertController(title: "Select a device", message: "Select a ZQ610 Zebra printer", preferredStyle: .actionSheet)
         
-        let cancelAction = UIAlertAction(title: "Annulla", style: .cancel) { _ in
+        let cancelAction = UIAlertAction(title: self.cancelText, style: .cancel) { _ in
             self.alertController = nil // Resetta il riferimento quando l'alert viene chiuso
         }
         alertController?.addAction(cancelAction)
@@ -182,17 +217,34 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
     }
 
     func updateAlertWithPeripheral(_ peripheral: CBPeripheral) {
-        guard let name = peripheral.name, name.contains("ZQ610"), let alert = alertController else {
+        
+        guard let name = peripheral.name?.lowercased(), self.wildcard == nil || name.contains(self.wildcard!.lowercased())
+                , let alert = alertController else {
             return
         }
-        
+
         if !alert.actions.contains(where: { $0.title == name }) {
             let action = UIAlertAction(title: name, style: .default, handler: { _ in
+                NSLog("Connecting to \(peripheral.name ?? "")")
                 self.connectToPeripheral(peripheral)
+                // return selected device via callback, deviceSelected is the callbackId in the cordova plugin.
+
+                let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: peripheral.name)
+                self.commandDelegate!.send(pluginResult, callbackId: "deviceSelected")
+        
             })
             alert.addAction(action)
         }
     }
+
+// deviceSelected : 
+// 1. Get the device name
+// 2. Connect to the device
+// 3. Send the device name to the cordova plugin
+// 4. Close the alert
+// 5. Print the data
+// 6. Return the result to the cordova plugin
+
     
     func connectToPeripheral(_ peripheral:CBPeripheral){
         NSLog("Connessione per Nome")
