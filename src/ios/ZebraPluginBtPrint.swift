@@ -108,35 +108,97 @@ class ZebraPluginBtPrint: CDVPlugin {
      an appropriate error message is generated.
      
      */
+    // @objc func print(_ command: CDVInvokedUrlCommand) {
+        
+    //     let cpcl = command.arguments[0] as? String ?? ""
+    //     let data = cpcl.data(using: .utf8)
+        
+    //     if(connectedPeripheral != nil){
+    //         printToConnectedPeripheral(data: cpcl, peripheral: self.connectedPeripheral!)
+    //         return
+    //     }
+    //     var printError: NSError!
+    //     var pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR)
+        
+    //     if self.isConnected {
+    //         do {
+    //             printerConnection?.close()
+    //             try printerConnection?.open()
+    //             try printerConnection?.write(data, error: &printError)
+    //             pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
+    //         } catch let error as NSError {
+    //             NSLog("Error printing: \(error.localizedDescription)")
+    //             pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error.localizedDescription)
+    //         }
+    //     } else {
+    //         NSLog("Printer not connected")
+    //         pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Printer Not Connected")
+    //     }
+        
+    //     self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+    // }
+
     @objc func print(_ command: CDVInvokedUrlCommand) {
-        
-        let cpcl = command.arguments[0] as? String ?? ""
-        let data = cpcl.data(using: .utf8)
-        
-        if(connectedPeripheral != nil){
-            printToConnectedPeripheral(data: cpcl, peripheral: self.connectedPeripheral!)
-            return
-        }
-        var printError: NSError!
-        var pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR)
-        
-        if self.isConnected {
-            do {
-                printerConnection?.close()
-                try printerConnection?.open()
-                try printerConnection?.write(data, error: &printError)
-                pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
-            } catch let error as NSError {
-                NSLog("Error printing: \(error.localizedDescription)")
-                pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error.localizedDescription)
-            }
-        } else {
-            NSLog("Printer not connected")
-            pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Printer Not Connected")
-        }
-        
-        self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+    // Log the start of the print function
+    NSLog("BT_PRINT_DEBUG: print function called")
+    
+    // Extract CPCL data from the command arguments
+    let cpcl = command.arguments[0] as? String ?? ""
+    NSLog("BT_PRINT_DEBUG: CPCL data extracted: \(cpcl)")
+    
+    // Convert the CPCL string to Data
+    let data = cpcl.data(using: .utf8)
+    NSLog("BT_PRINT_DEBUG: CPCL converted to data: \(String(describing: data))")
+
+    // Check for connected peripheral
+    if connectedPeripheral != nil {
+        NSLog("BT_PRINT_DEBUG: Connected peripheral found: \(connectedPeripheral!.name ?? "Unknown")")
+        printToConnectedPeripheral(data: cpcl, peripheral: self.connectedPeripheral!)
+        return
+    } else {
+        NSLog("BT_PRINT_DEBUG: No connected peripheral found")
     }
+
+    // Prepare for error handling
+    var printError: NSError!
+    var pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR)
+    
+    // Check if the printer is connected
+    if self.isConnected {
+        NSLog("BT_PRINT_DEBUG: Printer is connected")
+        
+        do {
+            NSLog("BT_PRINT_DEBUG: Closing any existing printer connection")
+            printerConnection?.close()
+            
+            NSLog("BT_PRINT_DEBUG: Attempting to open printer connection")
+            try printerConnection?.open()
+            NSLog("BT_PRINT_DEBUG: Printer connection opened successfully")
+            
+            NSLog("BT_PRINT_DEBUG: Writing data to printer: \(String(describing: data))")
+            try printerConnection?.write(data, error: &printError)
+
+            // Check if there was an error while writing data
+            if let error = printError {
+                NSLog("BT_PRINT_DEBUG: Error while printing: \(error.localizedDescription)")
+                pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error.localizedDescription)
+            } else {
+                NSLog("BT_PRINT_DEBUG: Data successfully written to printer")
+                pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
+            }
+        } catch let error as NSError {
+            NSLog("BT_PRINT_DEBUG: Exception caught during printing: \(error.localizedDescription)")
+            pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error.localizedDescription)
+        }
+    } else {
+        NSLog("BT_PRINT_DEBUG: Printer is not connected")
+        pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Printer Not Connected")
+    }
+
+    // Log sending result back to Cordova
+    NSLog("BT_PRINT_DEBUG: Sending result back to Cordova app")
+    self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+}
     
     
     /// ------------ NEW BLUETOOTH MANAGEMENT ---------
