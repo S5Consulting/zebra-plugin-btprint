@@ -143,7 +143,7 @@ class ZebraPluginBtPrint: CDVPlugin {
     NSLog("BT_PRINT_DEBUG: print function called")
     
     // Extract CPCL data from the command arguments
-    let cpcl = command.arguments[0] as? String ?? ""
+    let cpcl = command.arguments[1] as? String ?? ""
     NSLog("BT_PRINT_DEBUG: CPCL data extracted: \(cpcl)")
     
     // Convert the CPCL string to Data
@@ -151,13 +151,13 @@ class ZebraPluginBtPrint: CDVPlugin {
     NSLog("BT_PRINT_DEBUG: CPCL converted to data: \(String(describing: data))")
 
     // Check for connected peripheral
-    if connectedPeripheral != nil {
-        NSLog("BT_PRINT_DEBUG: Connected peripheral found: \(connectedPeripheral!.name ?? "Unknown")")
-        printToConnectedPeripheral(data: cpcl, peripheral: self.connectedPeripheral!)
-        return
-    } else {
-        NSLog("BT_PRINT_DEBUG: No connected peripheral found")
-    }
+    // if connectedPeripheral != nil {
+    //     NSLog("BT_PRINT_DEBUG: Connected peripheral found: \(connectedPeripheral!.name ?? "Unknown")")
+    //     printToConnectedPeripheral(data: cpcl, peripheral: self.connectedPeripheral!)
+    //     return
+    // } else {
+    //     NSLog("BT_PRINT_DEBUG: No connected peripheral found")
+    // }
 
     // Prepare for error handling
     var printError: NSError!
