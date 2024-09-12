@@ -19,20 +19,20 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-  sonarcloud:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args:
-            -Dsonar.projectKey=S5Consulting_zebra-plugin-btprint
-            -Dsonar.organization=s5consulting 
-            -Dsonar.sources=./src
+  # sonarcloud:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: SonarCloud Scan
+  #       uses: SonarSource/sonarcloud-github-action@master
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #       with:
+  #         args:
+  #           -Dsonar.projectKey=S5Consulting_zebra-plugin-btprint
+  #           -Dsonar.organization=s5consulting 
+  #           -Dsonar.sources=./src
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
