@@ -138,26 +138,95 @@ class ZebraPluginBtPrint: CDVPlugin {
     //     self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
     // }
 
-    @objc func print(_ command: CDVInvokedUrlCommand) {
+//     @objc func print(_ command: CDVInvokedUrlCommand) {
+//     // Log the start of the print function
+//     NSLog("BT_PRINT_DEBUG: print function called")
+    
+//     // Extract CPCL data from the command arguments
+//     let cpcl = command.arguments[1] as? String ?? ""
+//     NSLog("BT_PRINT_DEBUG: CPCL data extracted: \(cpcl)")
+    
+//     // Convert the CPCL string to Data
+//     let data = cpcl.data(using: .utf8)
+//     NSLog("BT_PRINT_DEBUG: CPCL converted to data: \(String(describing: data))")
+
+//     // Check for connected peripheral
+//     // if connectedPeripheral != nil {
+//     //     NSLog("BT_PRINT_DEBUG: Connected peripheral found: \(connectedPeripheral!.name ?? "Unknown")")
+//     //     printToConnectedPeripheral(data: cpcl, peripheral: self.connectedPeripheral!)
+//     //     return
+//     // } else {
+//     //     NSLog("BT_PRINT_DEBUG: No connected peripheral found")
+//     // }
+
+//     // Prepare for error handling
+//     var printError: NSError!
+//     var pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR)
+    
+//     // Check if the printer is connected
+//     if self.isConnected {
+//         NSLog("BT_PRINT_DEBUG: Printer is connected")
+        
+//         do {
+//             NSLog("BT_PRINT_DEBUG: Closing any existing printer connection")
+//             printerConnection?.close()
+            
+//             NSLog("BT_PRINT_DEBUG: Attempting to open printer connection")
+//             try printerConnection?.open()
+//             NSLog("BT_PRINT_DEBUG: Printer connection opened successfully")
+            
+//             NSLog("BT_PRINT_DEBUG: Writing data to printer: \(String(describing: data))")
+//             try printerConnection?.write(data, error: &printError)
+
+//             // Check if there was an error while writing data
+//             if let error = printError {
+//                 NSLog("BT_PRINT_DEBUG: Error while printing: \(error.localizedDescription)")
+//                 pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error.localizedDescription)
+//             } else {
+//                 NSLog("BT_PRINT_DEBUG: Data successfully written to printer")
+//                 pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
+//             }
+//         } catch let error as NSError {
+//             NSLog("BT_PRINT_DEBUG: Exception caught during printing: \(error.localizedDescription)")
+//             pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error.localizedDescription)
+//         }
+//     } else {
+//         NSLog("BT_PRINT_DEBUG: Printer is not connected")
+//         pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Printer Not Connected")
+//     }
+
+//     // Log sending result back to Cordova
+//     NSLog("BT_PRINT_DEBUG: Sending result back to Cordova app")
+//     self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+// }
+
+@objc func print(_ command: CDVInvokedUrlCommand) {
     // Log the start of the print function
     NSLog("BT_PRINT_DEBUG: print function called")
     
     // Extract CPCL data from the command arguments
     let cpcl = command.arguments[1] as? String ?? ""
     NSLog("BT_PRINT_DEBUG: CPCL data extracted: \(cpcl)")
-    
-    // Convert the CPCL string to Data
-    let data = cpcl.data(using: .utf8)
-    NSLog("BT_PRINT_DEBUG: CPCL converted to data: \(String(describing: data))")
 
-    // Check for connected peripheral
-    // if connectedPeripheral != nil {
-    //     NSLog("BT_PRINT_DEBUG: Connected peripheral found: \(connectedPeripheral!.name ?? "Unknown")")
-    //     printToConnectedPeripheral(data: cpcl, peripheral: self.connectedPeripheral!)
-    //     return
-    // } else {
-    //     NSLog("BT_PRINT_DEBUG: No connected peripheral found")
-    // }
+    // Check if argument at index 2 is "1" for peripheral printing
+    let usePeripheral = command.arguments[2] as? String == "1"
+    NSLog("BT_PRINT_DEBUG: Argument at index 2 is \(usePeripheral ? "1" : "not 1")")
+
+    // If the argument at index 2 is "1", use peripheral printing logic
+    if usePeripheral {
+        // Convert the CPCL string to Data
+        let data = cpcl.data(using: .utf8)
+        NSLog("BT_PRINT_DEBUG: CPCL converted to data: \(String(describing: data))")
+
+        // Check for connected peripheral
+        if connectedPeripheral != nil {
+            NSLog("BT_PRINT_DEBUG: Connected peripheral found: \(connectedPeripheral!.name ?? "Unknown")")
+            printToConnectedPeripheral(data: cpcl, peripheral: self.connectedPeripheral!)
+            return
+        } else {
+            NSLog("BT_PRINT_DEBUG: No connected peripheral found")
+        }
+    }
 
     // Prepare for error handling
     var printError: NSError!
@@ -199,6 +268,7 @@ class ZebraPluginBtPrint: CDVPlugin {
     NSLog("BT_PRINT_DEBUG: Sending result back to Cordova app")
     self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
 }
+ 
     
     
     /// ------------ NEW BLUETOOTH MANAGEMENT ---------
@@ -319,13 +389,36 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
     // print data
     
     // Funzione per stampare una volta connessa alla periferica
+    // private func printToConnectedPeripheral(data: String, peripheral: CBPeripheral) {
+    //   NSLog("Start Print....")
+    //     guard let services = peripheral.services else {return }
+    //     let characteristic = services[0].characteristics?[0]
+    //     if(characteristic != nil) {
+    //         let dataToPrint = Data(data.utf8)
+    //         peripheral.writeValue(dataToPrint, for: characteristic!, type: .withoutResponse)
+    //     }
+    // }
     private func printToConnectedPeripheral(data: String, peripheral: CBPeripheral) {
-      NSLog("Start Print....")
-        guard let services = peripheral.services else {return }
-        let characteristic = services[0].characteristics?[0]
-        if(characteristic != nil) {
-            let dataToPrint = Data(data.utf8)
-            peripheral.writeValue(dataToPrint, for: characteristic!, type: .withoutResponse)
-        }
+    NSLog("Start Print....")
+    
+    guard let services = peripheral.services else {
+        NSLog("No services found for peripheral: \(peripheral)")
+        return
     }
+    NSLog("Found \(services.count) services for peripheral: \(peripheral)")
+    
+    let characteristic = services[0].characteristics?[0]
+    if characteristic != nil {
+        NSLog("Using characteristic: \(String(describing: characteristic))")
+        
+        let dataToPrint = Data(data.utf8)
+        NSLog("Data to print: \(dataToPrint)")
+        
+        peripheral.writeValue(dataToPrint, for: characteristic!, type: .withoutResponse)
+        NSLog("Data written to peripheral: \(peripheral)")
+    } else {
+        NSLog("No characteristic found in the first service for peripheral: \(peripheral)")
+    }
+}
+ 
 }
