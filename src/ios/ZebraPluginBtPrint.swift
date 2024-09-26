@@ -203,8 +203,39 @@ class ZebraPluginBtPrint: CDVPlugin {
 
     @objc func print(_ command: CDVInvokedUrlCommand) {
         
+        EAAccessoryManager.shared().registerForLocalNotifications()
+        
+        let bluetoothPrinters = EAAccessoryManager.shared().connectedAccessories
+        guard let printer = bluetoothPrinters.first else {
+            NSLog("No printers connected")
+            return
+        }
+        
+        autoreleasepool {
+            guard let connection = MfiBtPrinterConnection(serialNumber: printer.serialNumber) else {
+                NSLog("Failed to create printer connection")
+                    return
+                }
+            
+            let open = connection.open()
+            if open {
+                do {
+                    let printer = try ZebraPrinterFactory.getInstance(connection)
+                    let lang = printer.getControlLanguage()
+                    
+                    if lang != PRINTER_LANGUAGE_CPCL {
+                        let tool = printer.getToolsUtil()
+                        try tool?.sendCommand("^XA^FO17,16^GB379,371,8^FS^FT65,255^A0N,135,134^FDMEMO^FS^XZ")
+                    }
+                } catch {
+                    NSLog("Error: \(error)")
+                }
+                connection.close()
+            }
+        }
         
     }
+ 
  
     
     
