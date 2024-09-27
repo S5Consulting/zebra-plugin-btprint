@@ -112,7 +112,7 @@
 @interface TcpPrinterConnection : NSObject<ZebraPrinterConnection> {
 	@private NSString *ipAddress;
 	@private NSInteger port;
-	@private NSInteger maxTimeoutForRead;
+	@private NSInteger maxTimetouForRead;
     @private NSInteger timeToWaitForMoreData;
     @private NSInteger maxTimeoutForOpen;
 	@private BOOL m_isConnected;

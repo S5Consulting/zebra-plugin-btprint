@@ -1,22 +1,29 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plugin id="s5-zebra-plugin-btprint" version="1.7.2" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+<plugin id="s5-zebra-plugin-btprint" version="1.7.3" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
     <name>ZebraPluginBtPrint</name>
+    
+    <!-- JavaScript module binding for the plugin -->
     <js-module name="ZebraPluginBtPrint" src="www/ZebraPluginBtPrint.js">
         <clobbers target="lexit.btprint" />
     </js-module>
+    
     <platform name="ios">
+        <!-- Specify Swift version -->
         <config-file parent="/*" target="config.xml">
             <preference name="SwiftVersion" value="5.0" />
             <feature name="ZebraPluginBtPrint">
                 <param name="ios-package" value="ZebraPluginBtPrint" />
             </feature>
         </config-file>
+
+        <!-- Add required external accessory protocols to the Info.plist -->
         <config-file target="*-Info.plist" parent="UISupportedExternalAccessoryProtocols">
             <array>
                 <string>com.zebra.rawport</string>
             </array>
         </config-file>
-        <!--Zebra SDK headers-->
+
+        <!-- Zebra SDK headers -->
         <header-file src="src/ios/lib/include/DiscoveredPrinter.h" />
         <header-file src="src/ios/lib/include/DiscoveredPrinterNetwork.h" />
         <header-file src="src/ios/lib/include/FieldDescriptionData.h" />
@@ -38,11 +45,19 @@
         <header-file src="src/ios/lib/include/ZebraPrinterConnection.h" />
         <header-file src="src/ios/lib/include/ZebraPrinterFactory.h" />
         <header-file src="src/ios/lib/include/ZplPrintMode.h" />
-        <!--Zebra SDK library-->
-        <source-file src="src/ios/lib/libZSDK_API.a" framework="true"/>
-        <!-- Bridging File -->
+        
+        <!-- Zebra SDK static library -->
+        <source-file src="src/ios/lib/libZSDK_API.a" framework="true" />
+
+        <!-- Bridging header for Swift -->
         <header-file src="src/ios/ZebraPluginBridgingHeader.h" type="BridgingHeader" />
-        <!--Plugin source-->
+
+        <!-- Add Library Search Paths to include folder -->
+        <config-file target="project.pbxproj" parent="/* YOUR TARGET NAME */" mode="merge">
+            <string>$(PROJECT_DIR)/$(TARGET_NAME)/Plugins/s5-zebra-plugin-btprint/lib/include</string>
+        </config-file>
+
+        <!-- Swift source file -->
         <source-file src="src/ios/ZebraPluginBtPrint.swift" />
     </platform>
     <platform name="android">
