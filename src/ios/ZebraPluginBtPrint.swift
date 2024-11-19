@@ -197,18 +197,28 @@ class ZebraPluginBtPrint: CDVPlugin {
         }
         savedData = data
         
+        NSLog("printer is connected: \(isConnected)")
+        
         var msg = "Printer \(printerName) is not connected"
         
-        if !self.isConnected {
+        if !isConnected {
             self.printerName = printerName
             
             findConnectedPrinter { [weak self] bool in
                 if let strongSelf = self {
                     strongSelf.isConnected = bool
+                    NSLog("Second attempt of checking if printer is connected: \(strongSelf.isConnected)")
+                    
                     if !strongSelf.isConnected {
                         
                         DispatchQueue.main.async {
-                            strongSelf.showDeviceSelectionModal()
+                            strongSelf.initializeBluetooth(timeout: strongSelf.howLongScanning) { result in
+                                NSLog("Bluetooth enabled: \(result)")
+
+                                if result {
+                                    strongSelf.startScanning()
+                                }
+                            }
                         }
                     } else {
                         NSLog("invoke from findConnectedPrinter")
@@ -243,9 +253,6 @@ class ZebraPluginBtPrint: CDVPlugin {
         var printError: Error?
         
         NSLog("data to print: \(data)")
-        
-        printerConnection?.close()
-        printerConnection?.open()
         
         do {
             let printer = try ZebraPrinterFactory.getInstance(printerConnection)
@@ -329,7 +336,6 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
         switch central.state {
         case .poweredOn:
             NSLog("Bluetooth on")
-            startScanning()
         case .poweredOff:
             setPluginAsDisconnected()
             showAlert("Bluetooth is powered off.")
@@ -365,21 +371,6 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
         NSLog("BT device found: \(peripheral.identifier.uuidString ) \(peripheral.name ?? "")")
     }
     
-    // Connected to peripheral
-    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        
-        guard let pname = peripheral.name, let pservices = peripheral.services else {
-            NSLog("invalid connection")
-            return
-        }
-        
-        NSLog("Connected to printer: \(pname) \(pservices)")
-        peripheral.delegate = self
-        self.connectedPeripheral = peripheral
-        // Check with service uuid
-        //peripheral.discoverServices([serviceUUID])
-    }
-
     // Disconnect from peripheral
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         
@@ -421,8 +412,6 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
         func checkBluetoothPeriodically() {
             if currentBTState == .poweredOn {
                 
-                centralManager.scanForPeripherals(withServices: nil, options: nil)
-
                 NSLog("BT is enabled, returning success")
                 completion(true)
                 return
@@ -472,35 +461,76 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
 
     
     func connectToPeripheral(_ peripheral:CBPeripheral){
-        NSLog("Connessione per Nome")
+        NSLog("Connessione per Nome: \(peripheral)")
         connectedPeripheral = peripheral
         centralManager.stopScan()
         centralManager.connect(peripheral, options: nil)
-        if let data = self.savedData {
-            printToConnectedPeripheral(data: data, peripheral: self.connectedPeripheral!)
+    }
+    
+    // Connected to peripheral
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+
+        guard let deviceName = peripheral.name else {
+            NSLog("cannot get device name from connection")
+            return
+        }
+        
+        NSLog("connected with device \(deviceName)")
+        
+        if deviceName == printerName {
+            connectedPeripheral = peripheral
+
+            peripheral.delegate = self
+            peripheral.discoverServices(nil)
         } else {
-            NSLog("invalid data to print")
+            NSLog("connected device \(deviceName) is not \(printerName ?? "(no name provided)")")
+        }
+        
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        if let error = error {
+            NSLog("Error discovering services: \(error.localizedDescription)")
+            return
+        }
+        
+        guard let services = peripheral.services else {
+            NSLog("No services on device \(peripheral.name ?? "unknown")")
+            return
+        }
+        
+        NSLog("Found \(services.count) services for peripheral: \(peripheral.name ?? "Unknown")")
+        
+        for service in services {
+            peripheral.discoverCharacteristics(nil, for: service)
         }
     }
     
-    private func printToConnectedPeripheral(data: String, peripheral: CBPeripheral) {
-        NSLog("Start Print.... \(peripheral)")
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        if let error = error {
+            NSLog("Error discovering characteristics: \(error.localizedDescription)")
+            return
+        }
         
-        connectedPeripheral = peripheral
-        centralManager.stopScan()
-        centralManager.connect(peripheral, options: nil)
+        guard let characteristics = service.characteristics else {
+            NSLog("No characteristics for service: \(service.uuid)")
+            return
+        }
         
-        printerName = peripheral.name
-        findConnectedPrinter { [weak self] result in
-            if let strongSelf = self {
-                if result {
-                    DispatchQueue.global(qos: .userInitiated).async {
-                        _ = strongSelf.justPrint(data)
-                    }
+        NSLog("Found \(characteristics.count) characteristics for service: \(service.uuid)")
+
+        for characteristic in characteristics {
+            if characteristic.properties.contains(.write) || characteristic.properties.contains(.writeWithoutResponse) {
+                if let data = self.savedData {
+                    let dataToPrint = Data(data.utf8)
+                    
+                    let writeType: CBCharacteristicWriteType = characteristic.properties.contains(.writeWithoutResponse) ? .withoutResponse : .withResponse
+                                    
+                    peripheral.writeValue(dataToPrint, for: characteristic, type: writeType)
+                    NSLog("Data written to characteristic: \(characteristic.uuid)")
                 }
             }
         }
-
     }
  
 }
