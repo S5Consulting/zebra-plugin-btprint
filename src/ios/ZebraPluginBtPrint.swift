@@ -13,32 +13,43 @@ class ZebraPluginBtPrint: CDVPlugin {
     var printerConnection: MfiBtPrinterConnection?
     private var centralManager: CBCentralManager!
     private var connectedPeripheral: CBPeripheral?
-    var alertController: UIAlertController?
+    private var callbackID: String?
     
     var currentBTState: CBManagerState = .poweredOff
     var savedData: String?
 
     var cancelText: String = "Cancel"
-    var howLongScanning: TimeInterval = 20
+    var howLongScanning: TimeInterval = 30
     var delayTime: Int = 0
-    var howLongKeepPrinterConnection: Double = 10.0
+    var howLongKeepPrinterConnection: Double = 30.0
+    
+    private func deb(_ data: String) {
+        NSLog("BT_PRINT_DBG: " + data)
+    }
     
     @objc private func connectToPrinter( completion: (Bool) -> Void) {
+        
+        if let pc = printerConnection, pc.isConnected() {
+            deb("Reusing existing connection")
+            completion(true)
+            return
+        }
+        
         guard let serial = serialNumber else {
-            NSLog("Invalid printer serial number provided for connection")
+            deb("Invalid printer serial number provided for connection")
             return
         }
         guard let pc = MfiBtPrinterConnection(serialNumber: serial) else {
-            NSLog("Error while trying to connect to \(serial) printer")
+            deb("Error while trying to connect to \(serial) printer")
             return
         }
         printerConnection = pc
         pc.open()
         let connected = pc.isConnected()
         if  connected {
-            NSLog("printer \(serial) is connected")
+            deb("printer \(serial) is connected")
         } else {
-            NSLog("cannot connect to printer \(serial)")
+            deb("cannot connect to printer \(serial)")
         }
         completion(connected)
     }
@@ -48,7 +59,7 @@ class ZebraPluginBtPrint: CDVPlugin {
         let connectedDevices = manager.connectedAccessories
         var deviceConnected = false
         
-        NSLog("connected devices array: \(connectedDevices)")
+        deb("connected devices array: \(connectedDevices)")
         
         if connectedDevices.isEmpty {
             deviceConnected = false
@@ -56,16 +67,16 @@ class ZebraPluginBtPrint: CDVPlugin {
             return
         }
         
-        NSLog("trying to find printer: \(printerName ?? "(no printer name specified)")")
+        deb("trying to find printer: \(printerName ?? "(no printer name specified)")")
         
         for device in connectedDevices {
-            NSLog("found device name: \(device.name)")
+            deb("found device name: \(device.name)")
             
             if device.protocolStrings.contains("com.zebra.rawport") &&
                 device.name == printerName {
                 serialNumber = device.serialNumber
                 deviceConnected = true
-                NSLog("Zebra \(device.name) device found with serial number -> \(serialNumber ?? "N.D")")
+                deb("Zebra \(device.name) device found with serial number -> \(serialNumber ?? "N.D")")
                 connectToPrinter(completion: { completed in
                     completion(completed)
                 })
@@ -85,7 +96,7 @@ class ZebraPluginBtPrint: CDVPlugin {
      */
     @objc func initialize(_ command: CDVInvokedUrlCommand) {
         
-        NSLog("BT_PRINT_DEBUG: initialize function called")
+        deb("initialize function called")
         
         //
         // Load parameters
@@ -94,10 +105,10 @@ class ZebraPluginBtPrint: CDVPlugin {
         if let delayTime = command.arguments[0] as? Int {
             self.delayTime = delayTime
             
-            NSLog("delayTime: \(self.delayTime)")
+            deb("delayTime: \(self.delayTime)")
             
             waitForMilliseconds(milliseconds: self.delayTime) {
-                NSLog("BT timeout \(self.delayTime) has been reached - disconnecting Bluetooth")
+                self.deb("BT timeout \(self.delayTime) has been reached - disconnecting Bluetooth")
                 
                 self.setPluginAsDisconnected()
                 
@@ -105,13 +116,13 @@ class ZebraPluginBtPrint: CDVPlugin {
                     if self.centralManager.isScanning {
                         self.centralManager.stopScan()
                         self.centralManager = nil
-                        NSLog("Bluetooth scanning stopped.")
+                        self.deb("Bluetooth scanning stopped.")
                     }
                 }
             }
             
         } else {
-            NSLog("delayTime: invalid value: \(command.arguments[0])")
+            deb("delayTime: invalid value: \(command.arguments[0])")
         }
         
         // parameters : Wildcard | Pattern for name search
@@ -130,14 +141,14 @@ class ZebraPluginBtPrint: CDVPlugin {
         let howlong: Int = command.arguments.count > 4 ? (command.arguments[4] as! Int ) :  20
         self.howLongScanning = TimeInterval(howlong)
         
-        NSLog("\(command.arguments[1])")
-        NSLog("Wildcard: \(self.wildcard ?? "N.D")")
-        NSLog("PrinterName: \(self.printerName ?? "N.D")")
-        NSLog("CancelText: \(self.cancelText)")
-        NSLog("How long scanning: \(howLongScanning)")
+        deb("\(command.arguments[1])")
+        deb("Wildcard: \(self.wildcard ?? "N.D")")
+        deb("PrinterName: \(self.printerName ?? "N.D")")
+        deb("CancelText: \(self.cancelText)")
+        deb("How long scanning: \(howLongScanning)")
     
         initializeBluetooth(timeout: howLongScanning) { bool in
-            NSLog("Bluetooth enabled: \(bool)")
+            self.deb("Bluetooth enabled: \(bool)")
             
             self.findConnectedPrinter { [weak self] result in
                 if let strongSelf = self {
@@ -148,120 +159,75 @@ class ZebraPluginBtPrint: CDVPlugin {
      }
     
     @objc func print(_ command: CDVInvokedUrlCommand) {
+        callbackID = command.callbackId
+        
         initializeBluetooth(timeout: howLongScanning) { result in
-            self.startScanning()
             if result {
-                DispatchQueue.global(qos: .userInitiated).async {
-                    self.printPreparations(object: command)
-                }
-            } else {
-                self.showBTErrorMessage()
-            }
-        }
-    }
-    
-    @objc func printPreparations(object: CDVInvokedUrlCommand) {
-        var pluginResult : CDVPluginResult?
-        
-        // Log the start of the print function
-        NSLog("BT_PRINT_DEBUG: print function called")
-        
-        switch(currentBTState) {
-        case .poweredOff, .resetting, .unknown, .unsupported:
-            DispatchQueue.main.async {
-                self.showBTErrorMessage()
-            }
-            return
-        case .unauthorized:
-            DispatchQueue.main.async {
-                self.showAlert("Bluetooth is unauthorized.")
-            }
-            return
-        case .poweredOn:
-            NSLog("Bluetooth is ON, printing...")
-        @unknown default:
-            NSLog("unsupported bluetooth state: \(currentBTState)")
-            return
-        }
-        
-        guard let printerName = object.arguments[0] as? String else {
-            DispatchQueue.main.async {
-                self.showAlert("invalid printer name")
-            }
-            return
-        }
-        NSLog("selected printer name: \(printerName)")
-        
-        guard let data = object.arguments[1] as? String else {
-            DispatchQueue.main.async {
-                self.showAlert("invalid printer data")
-            }
-            return
-        }
-        savedData = data
-        
-        NSLog("printer is connected: \(isConnected)")
-        
-        var msg = "Printer \(printerName) is not connected"
-        
-        if !isConnected {
-            self.printerName = printerName
-            
-            findConnectedPrinter { [weak self] bool in
-                if let strongSelf = self {
-                    strongSelf.isConnected = bool
-                    NSLog("Second attempt of checking if printer is connected: \(strongSelf.isConnected)")
-                    
-                    if !strongSelf.isConnected {
-                        
-                        DispatchQueue.main.async {
-                            strongSelf.initializeBluetooth(timeout: strongSelf.howLongScanning) { result in
-                                NSLog("Bluetooth enabled: \(result)")
-
-                                if result {
-                                    strongSelf.startScanning()
-                                }
-                            }
-                        }
-                    } else {
-                        NSLog("invoke from findConnectedPrinter")
-                        pluginResult = strongSelf.justPrint(data)
-                        DispatchQueue.main.async {
-                            strongSelf.commandDelegate!.send(pluginResult, callbackId: object.callbackId)
-                        }
+                
+                guard let printerName = command.arguments[0] as? String else {
+                    DispatchQueue.main.async {
+                        self.showAlert("invalid printer name")
                     }
                     return
                 }
-            }
-        } else {
-            if self.printerName == printerName {
-                pluginResult = justPrint(data)
-                DispatchQueue.main.async {
-                    self.commandDelegate!.send(pluginResult, callbackId: object.callbackId)
+                self.deb("selected printer name: \(printerName)")
+                self.printerName = printerName
+                
+                guard let data = command.arguments[1] as? String else {
+                    DispatchQueue.main.async {
+                        self.showAlert("invalid printer data")
+                    }
+                    return
+                }
+                self.savedData = data
+
+                self.findConnectedPrinter { [weak self] printerPaired in
+                    if let strongSelf = self {
+
+                        if printerPaired {
+                            DispatchQueue.global(qos: .userInitiated).async {
+                                var pluginResult : CDVPluginResult?
+                                
+                                if strongSelf.printerName == printerName {
+                                    pluginResult = strongSelf.justPrint(strongSelf.savedData)
+                                    DispatchQueue.main.async {
+                                        strongSelf.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+                                    }
+                                } else {
+                                    DispatchQueue.main.async {
+                                        let msg = "Wrong printer selected"
+                                        strongSelf.showAlert(msg)
+                                        pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: msg)
+                                        strongSelf.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+                                    }
+                                }
+                            }
+                        } else {
+                            strongSelf.startScanning()
+                        }
+                    }
                 }
             } else {
-                DispatchQueue.main.async {
-                    msg += "\nPrinter connected: \(self.printerName ?? "")"
-                    self.showAlert(msg)
-                    pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: msg)
-                    self.commandDelegate!.send(pluginResult, callbackId: object.callbackId)
-                }
+                self.showBTErrorMessage()
             }
         }
     }
     
-    func justPrint(_ data: String) -> CDVPluginResult? {
+    func justPrint(_ data: String?) -> CDVPluginResult? {
         
         var pluginResult : CDVPluginResult?
         var printError: Error?
         
-        NSLog("data to print: \(data)")
+        deb("data to print: \(data ?? "no data!")")
+        deb("printerConnection is initialized: \(String(describing: printerConnection))")
         
         do {
+            printerConnection?.close()
+            printerConnection?.open()
             let printer = try ZebraPrinterFactory.getInstance(printerConnection)
             let lang = printer.getControlLanguage()
             
-            NSLog("printer language: \(lang)")
+            deb("printer language: \(lang)")
             
             if lang != PRINTER_LANGUAGE_CPCL {
                 let tool = printer.getToolsUtil()
@@ -276,11 +242,11 @@ class ZebraPluginBtPrint: CDVPlugin {
             
             strongSelf.printerConnection?.close()
             strongSelf.setPluginAsDisconnected()
-            NSLog("Connection closed after delay to allow for data processing.")
+            strongSelf.deb("Connection closed after delay to allow for data processing.")
         }
  
         if let error = printError {
-            NSLog("error: \(error.localizedDescription)")
+            deb("error: \(error.localizedDescription)")
             pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error.localizedDescription)
         } else {
             pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
@@ -301,7 +267,7 @@ class ZebraPluginBtPrint: CDVPlugin {
             pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR)
         }
         
-        NSLog("current bluetooth connection status: \(currentBTState)")
+        deb("current bluetooth connection status: \(currentBTState)")
         
         self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
     }
@@ -334,12 +300,8 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
     /// ----------------------- BLUETOOTH MANAGEMENT -----------------------
 
     func startScanning() {
-        
-        if centralManager.isScanning {
-            NSLog("Bluetooth scanning is already in progress.")
-            return
-        }
         if let manager = centralManager, manager.state == .poweredOn {
+            deb("started scanning for peripherials")
             manager.scanForPeripherals(withServices: nil, options: nil)
         } else {
             showAlert("Cannot scan, Bluetooth is not powered on.")
@@ -351,7 +313,7 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
         
         switch central.state {
         case .poweredOn:
-            NSLog("Bluetooth on")
+            deb("Bluetooth on")
         case .poweredOff:
             setPluginAsDisconnected()
             showAlert("Bluetooth is powered off.")
@@ -374,25 +336,30 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
         // check for zq610 printer and update modal
 
-        // Autoconnect if printerName are available
-        if let name = peripheral.name?.lowercased(), self.printerName != nil, name == self.printerName?.lowercased() {
-            connectToPeripheral(peripheral)
+        if connectedPeripheral != nil {
+            reconnectToPeripheral()
             return
         }
         
-        if let name = peripheral.name?.lowercased(), self.wildcard == nil || name.contains(self.wildcard!.lowercased())
-        {
-            updateAlertWithPeripheral(peripheral)
+        deb("BT device found: \(peripheral.identifier.uuidString ) \(peripheral.name ?? "") and looking for: \(self.printerName?.lowercased() ?? "no name")")
+        
+        // Autoconnect if printerName are available
+        if let name = peripheral.name?.lowercased(), self.printerName != nil, name == self.printerName?.lowercased() {
+            
+            deb("Making connection to: \(peripheral)")
+            connectedPeripheral = peripheral
+            centralManager.stopScan()
+            centralManager.connect(peripheral, options: nil)
+            return
         }
-        NSLog("BT device found: \(peripheral.identifier.uuidString ) \(peripheral.name ?? "")")
     }
     
     func reconnectToPeripheral() {
         if let peripheral = connectedPeripheral {
             centralManager.connect(peripheral, options: nil)
-            NSLog("Reconnecting to previously connected peripheral: \(peripheral.name ?? "unknown")")
+            deb("Reconnecting to previously connected peripheral: \(peripheral.name ?? "unknown")")
         } else {
-            NSLog("No previously connected peripheral found. Starting a new scan.")
+            deb("No previously connected peripheral found. Starting a new scan.")
             startScanning()
         }
     }
@@ -400,28 +367,13 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
     // Disconnect from peripheral
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         
-        NSLog("Disconnected from peripheral: \(peripheral.name ?? "unknown"), Error: \(error?.localizedDescription ?? "none")")
+        deb("Disconnected from peripheral: \(peripheral.name ?? "unknown"), Error: \(error?.localizedDescription ?? "none")")
         reconnectToPeripheral()
     }
     
     func setPluginAsDisconnected() {
         isConnected = false
         printerConnection = nil
-    }
-    
-    
-    /// ----------------------- DIALOG MANAGEMENT -----------------------
-    
-    func showDeviceSelectionModal() {
-        
-        alertController = UIAlertController(title: "Select a device", message: "Select a ZQ610 Zebra printer", preferredStyle: .actionSheet)
-        
-        let cancelAction = UIAlertAction(title: self.cancelText, style: .cancel) { _ in
-            self.alertController = nil // Resetta il riferimento quando l'alert viene chiuso
-        }
-        alertController?.addAction(cancelAction)
-        
-        self.viewController.present(alertController!, animated: true, completion: nil)
     }
     
     func initializeBluetooth(timeout: TimeInterval, completion: @escaping (Bool) -> Void) {
@@ -433,13 +385,13 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
         func checkBluetoothPeriodically() {
             if currentBTState == .poweredOn {
                 
-                NSLog("BT is enabled, returning success")
+                deb("BT is enabled, returning success")
                 completion(true)
                 return
             }
             
             if Date().timeIntervalSince(startTime) >= timeout {
-                NSLog("Timeout reached, bt is still not ready.")
+                deb("Timeout reached, bt is still not ready.")
                 completion(false)
                 return
             }
@@ -451,27 +403,6 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
         checkBluetoothPeriodically()
     }
 
-    func updateAlertWithPeripheral(_ peripheral: CBPeripheral) {
-        
-        guard let name = peripheral.name?.lowercased(), self.wildcard == nil || name.contains(self.wildcard!.lowercased())
-                , let alert = alertController else {
-            return
-        }
-
-        if !alert.actions.contains(where: { $0.title == name }) {
-            let action = UIAlertAction(title: name, style: .default, handler: { _ in
-                NSLog("Connecting to \(peripheral.name ?? "")")
-                self.connectToPeripheral(peripheral)
-                // return selected device via callback, deviceSelected is the callbackId in the cordova plugin.
-
-                let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: peripheral.name)
-                self.commandDelegate!.send(pluginResult, callbackId: "deviceSelected")
-        
-            })
-            alert.addAction(action)
-        }
-    }
-
 // deviceSelected :
 // 1. Get the device name
 // 2. Connect to the device
@@ -480,23 +411,24 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
 // 5. Print the data
 // 6. Return the result to the cordova plugin
 
-    
-    func connectToPeripheral(_ peripheral:CBPeripheral){
-        NSLog("Connessione per Nome: \(peripheral)")
-        connectedPeripheral = peripheral
-        centralManager.stopScan()
-        centralManager.connect(peripheral, options: nil)
+    private func sendErrorCallbackWith(message: String) {
+        deb(message)
+        var pluginResult : CDVPluginResult?
+        if let callbackId = self.callbackID {
+            pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: message)
+            self.commandDelegate!.send(pluginResult, callbackId: callbackId)
+        }
     }
     
     // Connected to peripheral
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
 
         guard let deviceName = peripheral.name else {
-            NSLog("cannot get device name from connection")
+            sendErrorCallbackWith(message: "cannot get device name from connection")
             return
         }
         
-        NSLog("connected with device \(deviceName)")
+        deb("connected with device \(deviceName)")
         
         if deviceName == printerName {
             connectedPeripheral = peripheral
@@ -504,23 +436,24 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
             peripheral.delegate = self
             peripheral.discoverServices(nil)
         } else {
-            NSLog("connected device \(deviceName) is not \(printerName ?? "(no name provided)")")
+            sendErrorCallbackWith(message: "connected device \(deviceName) is not \(printerName ?? "(no name provided)")")
         }
         
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        
         if let error = error {
-            NSLog("Error discovering services: \(error.localizedDescription)")
+            sendErrorCallbackWith(message: "Error discovering services: \(error.localizedDescription)")
             return
         }
         
         guard let services = peripheral.services else {
-            NSLog("No services on device \(peripheral.name ?? "unknown")")
+            sendErrorCallbackWith(message: "No services on device \(peripheral.name ?? "unknown")")
             return
         }
         
-        NSLog("Found \(services.count) services for peripheral: \(peripheral.name ?? "Unknown")")
+        deb("Found \(services.count) services for peripheral: \(peripheral.name ?? "Unknown")")
         
         for service in services {
             peripheral.discoverCharacteristics(nil, for: service)
@@ -528,17 +461,20 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        
+        deb("current bluetooth connection status: \(currentBTState)")
+        
         if let error = error {
-            NSLog("Error discovering characteristics: \(error.localizedDescription)")
+            sendErrorCallbackWith(message: "Error discovering characteristics: \(error.localizedDescription)")
             return
         }
         
         guard let characteristics = service.characteristics else {
-            NSLog("No characteristics for service: \(service.uuid)")
+            sendErrorCallbackWith(message: "No characteristics for service: \(service.uuid)")
             return
         }
         
-        NSLog("Found \(characteristics.count) characteristics for service: \(service.uuid)")
+        deb("Found \(characteristics.count) characteristics for service: \(service.uuid)")
 
         for characteristic in characteristics {
             if characteristic.properties.contains(.write) || characteristic.properties.contains(.writeWithoutResponse) {
@@ -548,7 +484,16 @@ extension ZebraPluginBtPrint: CBCentralManagerDelegate, CBPeripheralDelegate{
                     let writeType: CBCharacteristicWriteType = characteristic.properties.contains(.writeWithoutResponse) ? .withoutResponse : .withResponse
                                     
                     peripheral.writeValue(dataToPrint, for: characteristic, type: writeType)
-                    NSLog("Data written to characteristic: \(characteristic.uuid)")
+                    deb("Data written to characteristic: \(characteristic.uuid)")
+                    
+                    self.savedData = nil
+                    
+                    if let callbackId = self.callbackID {
+                        var pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
+                        self.commandDelegate!.send(pluginResult, callbackId: callbackId)
+                    }
+
+                    break
                 }
             }
         }
